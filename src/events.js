@@ -9,7 +9,10 @@ $(document).on('submit', 'form', function (e) {
             if (event.isDefaultPrevented()) {
                 e.preventDefault();
             } else {
-                $form.trigger('submitbefore.default');
+                $form.trigger({
+                    type:      'submitbefore',
+                    transport: 'default'
+                });
 
                 var timerProp = 'formExtraEvents';
                 var processTimer = function () {
@@ -19,7 +22,10 @@ $(document).on('submit', 'form', function (e) {
                     }
                     if (timer !== false) {
                         $form.data(timerProp, false);
-                        $form.trigger('submitstart.default');
+                        $form.trigger({
+                            type:      'submitstart',
+                            transport: 'default'
+                        });
                     }
                 };
 
@@ -31,7 +37,10 @@ $(document).on('submit', 'form', function (e) {
 
                 $window.one('unload', function () {
                     processTimer();
-                    $form.trigger('submitend.default');
+                    $form.trigger({
+                        type:      'submitend',
+                        transport: 'default'
+                    });
                 });
             }
         });

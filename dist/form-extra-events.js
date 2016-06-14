@@ -2,7 +2,7 @@
  * Form extra events
  * @see https://github.com/paulzi/form-extra-events
  * @license MIT (https://github.com/paulzi/form-extra-events/blob/master/LICENSE)
- * @version 1.0.0
+ * @version 1.0.1
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -33,7 +33,10 @@ $(document).on('submit', 'form', function (e) {
             if (event.isDefaultPrevented()) {
                 e.preventDefault();
             } else {
-                $form.trigger('submitbefore.default');
+                $form.trigger({
+                    type:      'submitbefore',
+                    transport: 'default'
+                });
 
                 var timerProp = 'formExtraEvents';
                 var processTimer = function () {
@@ -43,7 +46,10 @@ $(document).on('submit', 'form', function (e) {
                     }
                     if (timer !== false) {
                         $form.data(timerProp, false);
-                        $form.trigger('submitstart.default');
+                        $form.trigger({
+                            type:      'submitstart',
+                            transport: 'default'
+                        });
                     }
                 };
 
@@ -55,7 +61,10 @@ $(document).on('submit', 'form', function (e) {
 
                 $window.one('unload', function () {
                     processTimer();
-                    $form.trigger('submitend.default');
+                    $form.trigger({
+                        type:      'submitend',
+                        transport: 'default'
+                    });
                 });
             }
         });

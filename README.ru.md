@@ -32,8 +32,8 @@ bower install form-extra-events
 
 Добавьте обработчики событий используя jQuery:
 ```javacript
-$(document).on('submitstart.default', '#my-form', function () { $(this).addClass('form-loading'); });
-$(document).on('submitend.default',   '#my-form', function () { $(this).removeClass('form-loading'); });
+$(document).on('submitstart', '#my-form', function () { $(this).addClass('form-loading'); });
+$(document).on('submitend',   '#my-form', function () { $(this).removeClass('form-loading'); });
 ```
 
 ## Документация
@@ -41,19 +41,27 @@ $(document).on('submitend.default',   '#my-form', function () { $(this).removeCl
 ### События
 
 - `submitlast` - срабатывает после выполнения **всех** стандартных обработчиков события `submit`, здесь вы всё ещё можете отменить стандартное поведение браузера вызовом `preventDefault()`, но делать это рекомендуется только для того, чтобы отправить запрос иными способами, например, через AJAX, то есть запрос должен быть выполнен в любом случае;
-- `submitbefore.default` - срабатывает до начала стандартной отправки формы, здесь вы всё ещё можете модифицировать форму, но вы не можете отменить стандартное поведение браузера вызовом `preventDefault`, т. е. событие гарантированно выполнится перед стандартной отправкой;
-- `submitstart.default` - срабатывает после начала стандартной отправки формы, изменения в форме не изменят запрос;
-- `submitend.default` - срабатывает после окончания стандартной отправки формы.
+- `submitbefore` - срабатывает до начала отправки формы, здесь вы всё ещё можете модифицировать форму, но вы не можете отменить стандартное поведение браузера вызовом `preventDefault`, т. е. событие гарантированно выполнится перед отправкой;
+- `submitstart` - срабатывает после начала отправки формы, изменения в форме не изменят запрос;
+- `submitend` - срабатывает после окончания отправки формы.
 
-**Внимание**: событие `submitend.default` основан на событии `unload`, со всеми его ограничениями. Например, вы не сможете открыть окно вызовом `window.open()`. Также во многих мобильных браузеров данное событие не вызывается.
+**Внимание**: событие `submitend` основан на событии `unload`, со всеми его ограничениями. Например, вы не сможете открыть окно вызовом `window.open()`. Также во многих мобильных браузеров данное событие не вызывается.
 
 ### Транспорты и универсальная привязка к событиям
 
-Событие `eventlast` введён специально для реализации различных транспортов. Например, в [paulzi-form](https://github.com/paulzi/paulzi-form/) данное событие используется для отправки формы через AJAX. Данный AJAX транспорт также генерирует события `submitbefore.ajax`, `submitstart.ajax`, `submitend.ajax`, но с другим пространством имён `.ajax`. Если вам нужно обработать событие отправки формы, и вам не важно, каким транспортом она будет отправлена, вы должны прикрепить обработчики событий к событиям без указания пространства имён:
+Событие `submitlast` введён специально для реализации различных транспортов. Например, в [paulzi-form](https://github.com/paulzi/paulzi-form/) данное событие используется для отправки формы через AJAX. Данный AJAX транспорт также генерирует события `submitbefore`, `submitstart`, `submitend`, но с другим параметром события `transport`. Если вам нужно захватить событие именно штатной браузерной отправки формы, вам нужно проверить параметр `transport` в обработчике:
 
 ```javascript
-$(document).on('submitstart', '#my-form', function () { $(this).addClass('form-loading'); });
-$(document).on('submitend',   '#my-form', function () { $(this).removeClass('form-loading'); });
+$(document).on('submitstart', '#my-form', function (e) {
+    if (e.transport === 'default') {
+        $(this).addClass('form-loading');
+    }
+});
+$(document).on('submitend', '#my-form', function (e) {
+    if (e.transport === 'default') {
+        $(this).removeClass('form-loading');
+    }
+});
 ```
 
 ## Требования

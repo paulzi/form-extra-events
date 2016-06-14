@@ -1,6 +1,5 @@
 {
   "name": "form-extra-events",
-  "version": "1.0.0",
   "description": "Add extra events for html forms",
   "main": [
     "dist/form-extra-events.js"
