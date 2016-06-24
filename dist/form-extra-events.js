@@ -2,7 +2,7 @@
  * Form extra events
  * @see https://github.com/paulzi/form-extra-events
  * @license MIT (https://github.com/paulzi/form-extra-events/blob/master/LICENSE)
- * @version 1.1.2
+ * @version 1.1.0
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -87,7 +87,7 @@ var submitLastHandler = function (e) {
             if (typeof catchData !== 'object') {
                 catchData = { catchDefault: !!catchData };
             }
-            catchData = $.extend(FormExtraEvents, catchData);
+            catchData = $.extend({}, FormExtraEvents, catchData);
             if (catchData.catchDefault) {
                 requestId = $.now();
                 $requestInput = $('<input>').attr({

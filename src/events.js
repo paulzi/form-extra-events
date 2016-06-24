@@ -63,7 +63,7 @@ var submitLastHandler = function (e) {
             if (typeof catchData !== 'object') {
                 catchData = { catchDefault: !!catchData };
             }
-            catchData = $.extend(FormExtraEvents, catchData);
+            catchData = $.extend({}, FormExtraEvents, catchData);
             if (catchData.catchDefault) {
                 requestId = $.now();
                 $requestInput = $('<input>').attr({
