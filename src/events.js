@@ -59,9 +59,12 @@ var submitLastHandler = function (e) {
             trigger('submitbefore');
 
             // catch download
-            var catchData = $form.data(FormExtraEvents.dataAttribute);
-            catchData = catchData ? (typeof catchData === 'object' ? $.extend(FormExtraEvents, catchData) : FormExtraEvents) : false;
-            if (catchData) {
+            var catchData = $form.data(FormExtraEvents.dataAttribute) || {};
+            if (typeof catchData !== 'object') {
+                catchData = { catchDefault: !!catchData };
+            }
+            catchData = $.extend(FormExtraEvents, catchData);
+            if (catchData.catchDefault) {
                 requestId = $.now();
                 $requestInput = $('<input>').attr({
                     type:  'hidden',
