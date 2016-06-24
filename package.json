@@ -2,9 +2,7 @@
   "name": "form-extra-events",
   "version": "1.1.0",
   "description": "Add extra events for html forms",
-  "main": [
-    "dist/form-extra-events.js"
-  ],
+  "main": "dist/form-extra-events.js",
   "moduleType": [
     "amd",
     "globals"
