@@ -56,6 +56,8 @@ var submitLastHandler = function (e) {
                 trigger('submitend');
             };
 
+            trigger('submitbefore');
+
             // catch download
             var catchData = $form.data(FormExtraEvents.dataAttribute);
             catchData = catchData ? (typeof catchData === 'object' ? $.extend(FormExtraEvents, catchData) : FormExtraEvents) : false;
@@ -80,7 +82,6 @@ var submitLastHandler = function (e) {
                 }
             }
 
-            trigger('submitbefore');
             beforeUnloadTimer = setTimeout(beforeUnloadCheck, 100);
             $window.one('beforeunload', beforeUnloadCheck);
             $window.one('unload',       submitEnd);
@@ -90,7 +91,8 @@ var submitLastHandler = function (e) {
 
 $(document).on('submit', function (e) {
     if (!e.isDefaultPrevented()) {
-        $window.off('submit', submitLastHandler);
-        $window.one('submit', submitLastHandler);
+        var eventName = 'submit.last';
+        $window.off(eventName);
+        $window.one(eventName, submitLastHandler);
     }
 });
