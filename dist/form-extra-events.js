@@ -2,13 +2,13 @@
  * Form extra events
  * @see https://github.com/paulzi/form-extra-events
  * @license MIT (https://github.com/paulzi/form-extra-events/blob/master/LICENSE)
- * @version 1.0.1
+ * @version 1.1.0
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module unless amdModuleId is set
     define(["jquery"], function (a0) {
-      return (factory(a0));
+      return (root['FormExtraEvents'] = factory(a0));
     });
   } else if (typeof exports === 'object') {
     // Node. Does not work with strict CommonJS, but
@@ -16,59 +16,108 @@
     // like Node.
     module.exports = factory(require("jquery"));
   } else {
-    factory(root.jQuery);
+    root['FormExtraEvents'] = factory(root.jQuery);
   }
 }(this, function ($) {
 
 'use strict';
 
-$(document).on('submit', 'form', function (e) {
+var $window = $(window);
+
+var FormExtraEvents = $.extend({
+    catchDefault:  false,
+    dataAttribute: 'catchDownload',
+    param:         '_requestId',
+    interval:      100,
+    timeout:       60000
+}, window.FormExtraEvents || {});
+
+var submitLastHandler = function (e) {
     if (!e.isDefaultPrevented()) {
-        var $form   = $(this),
-            $window = $(window);
-        $window.off('submit');
-        $window.one('submit', function () {
-            var event = $.Event("submitlast");
-            $form.trigger(event);
-            if (event.isDefaultPrevented()) {
-                e.preventDefault();
-            } else {
+        var $form   = $(e.target),
+            event   = $.Event('submitlast');
+        $form.trigger(event);
+        if (event.isDefaultPrevented()) {
+            e.preventDefault();
+        } else {
+
+            var beforeUnloadTimer, catchTimer, catchTimeoutTimer, requestId, $requestInput;
+
+            var trigger = function (type) {
                 $form.trigger({
-                    type:      'submitbefore',
+                    type:      type,
                     transport: 'default'
                 });
+            };
 
-                var timerProp = 'formExtraEvents';
-                var processTimer = function () {
-                    var timer = $form.data(timerProp);
-                    if (timer) {
-                        clearTimeout(timer);
+            var beforeUnloadCheck = function () {
+                if (beforeUnloadTimer) {
+                    clearTimeout(beforeUnloadTimer);
+                }
+                if (beforeUnloadTimer !== false) {
+                    beforeUnloadTimer = false;
+                    if ($requestInput) {
+                        $requestInput.remove();
+                        $requestInput = null;
                     }
-                    if (timer !== false) {
-                        $form.data(timerProp, false);
-                        $form.trigger({
-                            type:      'submitstart',
-                            transport: 'default'
-                        });
+                    $window.off('beforeunload', beforeUnloadCheck);
+                    trigger('submitstart');
+                }
+            };
+
+            var submitEnd = function () {
+                $window.off('unload', submitEnd);
+                beforeUnloadCheck();
+                if (catchTimer) {
+                    clearInterval(catchTimer);
+                }
+                if (catchTimeoutTimer) {
+                    clearTimeout(catchTimeoutTimer);
+                }
+                if (requestId) {
+                    document.cookie = catchData.param + requestId + '=; expires=' + new Date(0).toUTCString() + '; path=/';
+                }
+                trigger('submitend');
+            };
+
+            // catch download
+            var catchData = $form.data(FormExtraEvents.dataAttribute);
+            catchData = catchData ? (typeof catchData === 'object' ? $.extend(FormExtraEvents, catchData) : FormExtraEvents) : false;
+            if (catchData) {
+                requestId = $.now();
+                $requestInput = $('<input>').attr({
+                    type:  'hidden',
+                    name:  catchData.param,
+                    value: requestId
+                }).appendTo($form);
+
+                catchTimer = setInterval(function () {
+                    if (document.cookie.indexOf(requestId + '=1') !== -1) {
+                        submitEnd();
                     }
-                };
+                }, catchData.interval);
 
-                // beforeunload event polyfill
-                $form.data(timerProp, setTimeout(processTimer, 100));
-
-                // standard beforeunload
-                $window.one('beforeunload', processTimer);
-
-                $window.one('unload', function () {
-                    processTimer();
-                    $form.trigger({
-                        type:      'submitend',
-                        transport: 'default'
-                    });
-                });
+                if (catchData.timeout) {
+                    catchTimeoutTimer = setTimeout(function () {
+                        submitEnd();
+                    }, catchData.timeout);
+                }
             }
-        });
+
+            trigger('submitbefore');
+            beforeUnloadTimer = setTimeout(beforeUnloadCheck, 100);
+            $window.one('beforeunload', beforeUnloadCheck);
+            $window.one('unload',       submitEnd);
+        }
+    }
+};
+
+$(document).on('submit', function (e) {
+    if (!e.isDefaultPrevented()) {
+        $window.off('submit', submitLastHandler);
+        $window.one('submit', submitLastHandler);
     }
 });
+return FormExtraEvents;
 
 }));

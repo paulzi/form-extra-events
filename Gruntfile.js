@@ -29,6 +29,7 @@ module.exports = function(grunt) {
             all: {
                 options: {
                     src: 'dist/<%= pkg.name %>.js',
+                    objectToExport: 'FormExtraEvents',
                     deps: {
                         'default': [{'jquery': '$'}],
                         global: ['root.jQuery']
