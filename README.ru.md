@@ -139,3 +139,5 @@ npm test
 
 - Internet Explorer 11+
 - Другие современные браузеры
+
+Для старых браузеров используйте [версию 1.x](https://github.com/paulzi/form-extra-events/tree/1.x).
