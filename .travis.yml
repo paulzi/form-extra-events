@@ -1,0 +1,16 @@
+dist: trusty
+
+addons:
+  chrome: stable
+  firefox: latest
+
+language: node_js
+
+node_js:
+  - 10
+
+install:
+  - npm install
+
+script:
+  - npm test

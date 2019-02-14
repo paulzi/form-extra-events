@@ -1,144 +1,141 @@
-# Form Extra Events
+# form-extra-events
 
 [![NPM version](http://img.shields.io/npm/v/form-extra-events.svg?style=flat)](https://www.npmjs.org/package/form-extra-events)
-![Bower version](http://img.shields.io/bower/v/form-extra-events.svg?style=flat)
+[![Build Status](https://img.shields.io/travis/paulzi/form-extra-events/master.svg)](https://travis-ci.org/paulzi/form-extra-events)
+[![Downloads](https://img.shields.io/npm/dt/form-extra-events.svg)](https://www.npmjs.org/package/form-extra-events)
+![License](https://img.shields.io/npm/l/form-extra-events.svg)
 
-Add extra events for html forms.
+Add extra events for submit html forms.
 
 [Russian readme](https://github.com/paulzi/form-extra-events/blob/master/README.ru.md)
 
 ## Install
 
-Install via NPM
 ```sh
 npm install form-extra-events
 ```
 
-Install via Bower
-```sh
-bower install form-extra-events
-```
-
-Or install manually.
-
 ## Usage
 
-Include library on page after jQuery:
+This example implements adding the `loading` class for all forms during submission.
 
-```html
-<script src="/bower_components/jquery/dist/jquery.min.js">
-<script src="/bower_components/form-extra-events/dist/form-extra-events.min.js">
-```
+```javascript
+import 'form-extra-events';
 
-Add event handler by jQuery:
-```javacript
-$(document).on('submitstart', '#my-form', function () { $(this).addClass('form-loading'); });
-$(document).on('submitend',   '#my-form', function () { $(this).removeClass('form-loading'); });
+document.addEventListener('submitstart', function(e) {
+    e.target.classList.add('loading');
+});
+document.addEventListener('submitend', function(e) {
+    e.target.classList.remove('loading');
+});
 ```
 
 ## Documentation
 
 ### Events
 
-- `submitlast` - triggered after **all** standard `submit` event handlers executed, you can still abort the default behavior by `preventDefault()`, but to do so is only recommended in cases where the request will be sent by other methods, such as AJAX, that is, the request itself must be handed over;
-- `submitbefore` - triggered before submit started, here you can still modify the form, but you can not cancel the default behavior by `preventDefault()`, that is, an event guaranteed to be executed before the submitting;
-- `submitstart` - triggered after start submit, changes in form will not change request;
-- `submitend` - triggered after end submit.
+`form-extra-events` adds the following events for all forms:
 
-**Note**: `submitend` event based on the `unload` event, with all its limitations. For example, you can not open a window by `window.open()`. Also, in many mobile browsers, this event does not triggered.
+- `submitlast` - triggered after executing **all** handlers of the standard `submit` event, here you can still cancel the standard browser behavior by calling `preventDefault()`, but this is recommended only to send a request in other ways, for example, via AJAX, that is, the request must be executed in any case;
+- `submitbefore` - triggers before the form is submitted, here you can still modify the form, but you cannot cancel the standard browser behavior by calling `preventDefault()`, i.e. the event is guaranteed to be executed before being sent;
+- `submitstart` - triggered after the form has been submitted, changes in the form will not change the request;
+- `submitend` - triggered after the form has been submitted.
 
-### Detect when browser file download and other target
+**Warning**: the `submitend` event is based on the `unload` event, with all its limitations.
+For example, you cannot open a window by calling `window.open()`.
+Also for many mobile browsers this event is not triggered.
 
-By default, the script can not catch the event when the browser goes in the file download mode, because that does not work out `submitend` events.
-Similarly, the script can not catch the end of submit when the attribute `target` is set to `_blank`.
-To keep track of this kind of action, you will need additional configuration on the server side of your application and need to change the options.
+### Event params
 
-If you specify the attribute `data-catch-download="true"` in the form, the script will add to the form the `_requestId` parameter with the request identifier, and will keep track of cookies, until `_requestId{%id}=1` appears in them - it will be a signal that the request has been successfully worked out. Alternatively, upon the occurrence of a timeout.
+The event object contains additional parameters:
 
-Example:
+- `transport {string}` - for events `submitbefore`, `submitstart`, `submitend` passes the name of the transport with which the form is transmitted. More details below in the section [transports](#Transports).
+- `activeButton {Element}` - for the events `submitlast`, `submitbefore` passes the button element with which the form was sent.
 
-```html
-<form action="action.php" method="post" data-catch-download="true">
-    <button type="submit">Submit</button>
-</form>
-<script>
-$(document).on('submitbefore', function () {
-    $('button').prop('disabled', true);
-});
-$(document).on('submitend', function () {
-    $('button').prop('disabled', false);
-});
-</script>
-```
+### Transports
 
-Server side:
-
-```php
-header('Content-Disposition: attachment; filename=test.html');
-if (!empty($_REQUEST['_requestId'])) {
-    setcookie('_requestId' . $_REQUEST['_requestId'], 1, time() + 60, '/');
-}
-echo '<html></html>';
-```
-
-The value of the attribute `data-catch-download` can be passed JSON, in which the options is override:
-
-```html
-<form action="action.php" method="post" data-catch-download='{"timeout": 10000}'>
-    <button type="submit">Submit</button>
-</form>
-```
-
-### Transport and universal events handling
-
-`submitlast` event is written specifically for implementation of various transports. For example, in the library [paulzi-form](https://github.com/paulzi/paulzi-form/), this event is used to submit the form via AJAX. This AJAX transport will also generate events `submitbefore`, `submitstart`, `submitend`, but with a other event parameter `transport`. If you need to capture the standard browser submit, check the parameter `transport` in handler:
+The `submitlast` event is introduced specifically for the implementation of various transports.
+In [form-plus](https://github.com/paulzi/form-plus/), this event is used to submit form via AJAX.
+This AJAX transport also generates the events `submitbefore`,` submitstart`, `submitend`, but with a different parameter of the event `transport`.
+If you need to capture the event of a regular browser-based form submission, you need to check the `transport === 'default'` parameter in the handler:
 
 ```javascript
-$(document).on('submitstart', '#my-form', function (e) {
-    if (e.transport === 'default') {
-        $(this).addClass('form-loading');
-    }
-});
-$(document).on('submitend', '#my-form', function (e) {
-    if (e.transport === 'default') {
-        $(this).removeClass('form-loading');
+document.addEventListener('submitbefore', function(e) {
+    if (e.detail.transport === 'default') {
+        let hidden = document.createElement('input');
+        hidden.name  = 'isNoAjax';
+        hidden.value = '1'; 
+        e.target.appendChild(hidden);
     }
 });
 ```
 
-### Global options
+### Detect download state
 
-You can change the settings by changing the properties of the global object `window.FormExtraEvents` (at any time, both before and after the include of the script).
+By default, the script cannot catch the end of form submission, if the browser has switched to the file download state, so in this case it does not handle the `submitend` event.
+Similarly, if you specify the attribute `target="_blank"` for the form.
+To catch the `submitend` event in such cases, use the `catch-download` script from the [form-plus](https://github.com/paulzi/form-plus/) package.
 
-Example:
+### Import types
+
+There are several entry points for importing a library:
+
+- `import ExtraEvents from 'form-extra-events'` - similarly `register-with-shims`;
+- `import ExtraEvents from 'form-extra-events/standard'` - easy import without polyfills for ie11, register is required;
+- `import ExtraEvents from 'form-extra-events/with-shims'` - import with shims for ie11, register is required;
+- `import ExtraEvents from 'form-extra-events/with-polyfills'` - import with polyfill for ie11, register is required;
+- `import ExtraEvents from 'form-extra-events/register'` - import without polyfills for ie11, auto-register;
+- `import ExtraEvents from 'form-extra-events/register-with-shims'` - import with shims for ie11, auto-register;
+- `import ExtraEvents from 'form-extra-events/register-with-polifills'` - import with polyfill for ie11, auto-register.
+
+Differences shims from polyfills you can read in [polyshim](https://github.com/paulzi/polyshim/) package.
+
+When directly include the script from the `dist` folder to the browser, you can get an ExtraEvent instance via `window.FormExtraEvents.default`.
+
+### Registration and name of events
+
+When importing a package without register, you need to register it. When registering, you can replace the event names:
 
 ```javascript
-window.FormExtraEvents = $.extend(true, window.FormExtraEvents || {}, {
-    catchDefault:  true,
-    timeout: 10000
-});
+import ExtraEvents from 'form-extra-events/with-shims';
+
+ExtraEvents.register({
+    eventLast: 'last',
+})
 ```
 
-Options:
+### Methods
 
-- `catchDefault` *(bool) default: false* - enable of catching file download on all forms by default
-- `dataAttribute` *(string) default: 'catchDownload'* - name of `data-` attribute in camelCase
-- `param` *(string) default: '_requestId'* - name of input and cookie parameter
-- `interval` *(integer) default: 100* - check cookie interval in millisecond
-- `timeout` *(integer) default: 60000* - timeout period in millisecond
+- `register([settings])` - register library
+    - `settings {Object} [{}]` - [settings](#Settings)
+    - `@return {Object}` - returns the current settings
+- `unregister()` - unregister library
+- `getSettings()` - returns the current settings
+    - `@return {Object}`
+- `getSendingForm()` - returns the current form being submitted
+    - `@return {HTMLFormElement|null}` 
+- `setShim([setClosest[, setObjectAssign[, setCustomEvent]]])` - sets shims for non-cross-browser methods
+    - `setClosest {Function|null}` - shim for `Element.prototype.closest`
+    - `setObjectAssign {Function|null}` - shim for `Object.assign`
+    - `setCustomEvent {Function|null}` - shim for `new CustomEvent`
 
-## Requirements
+### Settings
 
-- jQuery 1.7+
+- `eventLast {string} ['submitlast']` - name of event `submitlast` 
+- `eventBefore {string} ['submitbefore']` - name of event `submitbefore` 
+- `eventStart {string} ['submitstart']` - name of event `submitstart` 
+- `eventEnd {string} ['submitend']` - name of event `submitend` 
 
-## Browser support
+## Testing
 
-Tested with browsers:
+For tests, you need to install [selenium-drivers](https://seleniumhq.github.io/selenium/docs/api/javascript/index.html) for browsers.
+To run tests, use:
 
-- Internet Explorer 7+
-- Chrome 7+
-- Firefox 3+
-- Opera 15+
-- Safari 5+
-- Android Browser 2.2+
-- iOS Safari ?
+```sh
+npm test
+```
+
+## Browsers support
+
+- Internet Explorer 11+
+- Other modern browsers

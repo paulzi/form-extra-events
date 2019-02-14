@@ -1,16 +1,8 @@
 {
   "name": "form-extra-events",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Add extra events for html forms",
-  "main": "dist/form-extra-events.js",
-  "moduleType": [
-    "amd",
-    "globals"
-  ],
-  "keywords": [
-    "form",
-    "events"
-  ],
+  "main": "./register-with-shims.js",
   "authors": [
     {
       "name": "PaulZi",
@@ -20,17 +12,44 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paulzi/form-extra-events.git"
-  },
-  "dependencies": {
-    "jquery": ">=1.7.0"
+    "url": "https://github.com/paulzi/form-extra-events"
   },
   "devDependencies": {
-    "grunt": "^1.0.1",
-    "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-jshint": "^1.0.0",
-    "grunt-contrib-uglify": "^1.0.1",
-    "grunt-contrib-watch": "^1.0.0",
-    "grunt-umd": "^2.3.6"
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/register": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "chai": "^4.2.0",
+    "eslint": "^4.19.1",
+    "eslint-loader": "^2.1.2",
+    "express": "^4.16.4",
+    "mocha": "^5.2.0",
+    "selenium-webdriver": "^4.0.0-alpha.1",
+    "start-server-and-test": "^1.7.11",
+    "uglifyjs-webpack-plugin": "^2.1.1",
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.2.3",
+    "webpack-merge": "^4.2.1"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "last 4 Chrome versions",
+    "last 4 Firefox versions",
+    "ie >= 11",
+    "not ie < 11",
+    "Safari >= 9",
+    "Android >= 4.4",
+    "iOS >= 7.1"
+  ],
+  "scripts": {
+    "build:dev": "webpack --config webpack/dev.config.js",
+    "build:prod": "webpack --config webpack/prod.config.js",
+    "start": "node ./scripts/test-server.js",
+    "test:selenium": "eslint src/index.js && mocha -t 120000 -r @babel/register",
+    "test": "start-server-and-test start 3003 test:selenium"
+  },
+  "dependencies": {
+    "polyshim": "^0.1.1"
   }
 }

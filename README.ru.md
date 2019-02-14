@@ -1,7 +1,9 @@
-# Form Extra Events
+# form-extra-events
 
 [![NPM version](http://img.shields.io/npm/v/form-extra-events.svg?style=flat)](https://www.npmjs.org/package/form-extra-events)
-![Bower version](http://img.shields.io/bower/v/form-extra-events.svg?style=flat)
+[![Build Status](https://img.shields.io/travis/paulzi/form-extra-events/master.svg)](https://travis-ci.org/paulzi/form-extra-events)
+[![Downloads](https://img.shields.io/npm/dt/form-extra-events.svg)](https://www.npmjs.org/package/form-extra-events)
+![License](https://img.shields.io/npm/l/form-extra-events.svg)
 
 Добавляет дополнительные события при отправке форм.
 
@@ -9,136 +11,131 @@
 
 ## Установка
 
-Установка через NPM
 ```sh
 npm install form-extra-events
 ```
 
-Установка через Bower
-```sh
-bower install form-extra-events
-```
-
-Или установите вручную.
-
 ## Использование
 
-Подключите библиотеку на страницу после jQuery:
+Данный пример реализует добавление класса `loading` для всех форм во время отправки.
 
-```html
-<script src="/bower_components/jquery/dist/jquery.min.js">
-<script src="/bower_components/form-extra-events/dist/form-extra-events.min.js">
-```
+```javascript
+import 'form-extra-events';
 
-Добавьте обработчики событий используя jQuery:
-```javacript
-$(document).on('submitstart', '#my-form', function () { $(this).addClass('form-loading'); });
-$(document).on('submitend',   '#my-form', function () { $(this).removeClass('form-loading'); });
+document.addEventListener('submitstart', function(e) {
+    e.target.classList.add('loading');
+});
+document.addEventListener('submitend', function(e) {
+    e.target.classList.remove('loading');
+});
 ```
 
 ## Документация
 
 ### События
 
+`form-extra-events` добавляет для всех форм следующие события:
+
 - `submitlast` - срабатывает после выполнения **всех** стандартных обработчиков события `submit`, здесь вы всё ещё можете отменить стандартное поведение браузера вызовом `preventDefault()`, но делать это рекомендуется только для того, чтобы отправить запрос иными способами, например, через AJAX, то есть запрос должен быть выполнен в любом случае;
-- `submitbefore` - срабатывает до начала отправки формы, здесь вы всё ещё можете модифицировать форму, но вы не можете отменить стандартное поведение браузера вызовом `preventDefault`, т. е. событие гарантированно выполнится перед отправкой;
+- `submitbefore` - срабатывает до начала отправки формы, здесь вы всё ещё можете модифицировать форму, но вы не можете отменить стандартное поведение браузера вызовом `preventDefault()`, т. е. событие гарантированно выполнится перед отправкой;
 - `submitstart` - срабатывает после начала отправки формы, изменения в форме не изменят запрос;
 - `submitend` - срабатывает после окончания отправки формы.
 
-**Внимание**: событие `submitend` основан на событии `unload`, со всеми его ограничениями. Например, вы не сможете открыть окно вызовом `window.open()`. Также во многих мобильных браузеров данное событие не вызывается.
+**Внимание**: событие `submitend` основан на событии `unload`, со всеми его ограничениями.
+Например, вы не сможете открыть окно вызовом `window.open()`.
+Также для многих мобильных браузеров данное событие не вызывается.
+
+### Параметры событий
+
+Объект события содержит дополнительные параметры:
+
+- `transport {string}` - для событий `submitbefore`, `submitstart`, `submitend` передаёт название транспорта, с помощью которого передаётся форма. Подробнее ниже в разделе [транспорты](#Транспорты).
+- `activeButton {Element}` - для событий `submitlast`, `submitbefore` передаёт элемент кнопки, с помощью которой была отправлена форма.
+
+### Транспорты
+
+Событие `submitlast` введён специально для реализации различных транспортов.
+В [form-plus](https://github.com/paulzi/form-plus/) данное событие используется для отправки формы через AJAX.
+Данный AJAX транспорт также генерирует события `submitbefore`, `submitstart`, `submitend`, но с другим параметром события `transport`.
+Если вам нужно захватить событие именно штатной браузерной отправки формы, вам нужно проверить параметр `transport === 'default'` в обработчике:
+
+```javascript
+document.addEventListener('submitbefore', function(e) {
+    if (e.detail.transport === 'default') {
+        let hidden = document.createElement('input');
+        hidden.name  = 'isNoAjax';
+        hidden.value = '1'; 
+        e.target.appendChild(hidden);
+    }
+});
+```
 
 ### Обнаружение перехода в состояние загрузки
 
 По-умолчанию, скрипт не может отловить окончание отправки формы, если браузер перешёл в состояние загрузки файла, поэтому в данном случае не отрабатывает событие `submitend`.
 Аналогично происходит, если указать атрибут `target="_blank"` для формы. 
-Чтобы скрипт генерировал событие `submitend` в таких случаях, потребуются дополнительные действия на серверной стороне и указать дополнительные настройки.
+Чтобы отлавливать событие `submitend` в таких случаях, используйте скрипт `catch-download` из пакета [form-plus](https://github.com/paulzi/form-plus/).
 
-Для этого укажите атрибут `data-catch-download="true"` в форме, тогда в процессе отправки формы скрипт добавить параметр `_requestId` с идентификатором запроса, и будет ожидать появления Cookie с именем и значением `_requestId{%id}=1` - это будет являться сигналом того, что ответ был получен. Либо событие сгенерируется по таймауту.
+### Варианты импорта
 
-Пример:
+Есть несколько входных точек для импорта библиотеки:
 
-```html
-<form action="action.php" method="post" data-catch-download="true">
-    <button type="submit">Submit</button>
-</form>
-<script>
-$(document).on('submitbefore', function () {
-    $('button').prop('disabled', true);
-});
-$(document).on('submitend', function () {
-    $('button').prop('disabled', false);
-});
-</script>
-```
+- `import ExtraEvents from 'form-extra-events'` - аналогично `register-with-shims`;
+- `import ExtraEvents from 'form-extra-events/standard'` - простой импорт без полифилов для ie11, требуется регистрация;
+- `import ExtraEvents from 'form-extra-events/with-shims'` - импорт с прокладками для ie11, требуется регистрация;
+- `import ExtraEvents from 'form-extra-events/with-polyfills'` - импорт с полифилами для ie11, требуется регистрация;
+- `import ExtraEvents from 'form-extra-events/register'` - импорт без полифилов для ie11, авто-регистрация;
+- `import ExtraEvents from 'form-extra-events/register-with-shims'` - импорт с прокладками для ie11, авто-регистрация;
+- `import ExtraEvents from 'form-extra-events/register-with-polifills'` - импорт с полифилами для ie11, авто-регистрация.
 
-На сервере:
+Отличия прокладок от полифилов можете прочитать в [polyshim](https://github.com/paulzi/polyshim/).
 
-```php
-header('Content-Disposition: attachment; filename=test.html');
-if (!empty($_REQUEST['_requestId'])) {
-    setcookie('_requestId' . $_REQUEST['_requestId'], 1, time() + 60, '/');
-}
-echo '<html></html>';
-```
+При прямом подключении скрипта из папки `dist` в браузер, получить экземпляр ExtraEvent можно через `window.FormExtraEvents.default`.
 
-В качестве значения атрибута `data-catch-download` можно указать JSON, и переопределить в нём настройки:
+### Регистрация и наименование событий
 
-```html
-<form action="action.php" method="post" data-catch-download='{"timeout": 10000}'>
-    <button type="submit">Submit</button>
-</form>
-```
-
-### Транспорты и универсальная привязка к событиям
-
-Событие `submitlast` введён специально для реализации различных транспортов. Например, в [paulzi-form](https://github.com/paulzi/paulzi-form/) данное событие используется для отправки формы через AJAX. Данный AJAX транспорт также генерирует события `submitbefore`, `submitstart`, `submitend`, но с другим параметром события `transport`. Если вам нужно захватить событие именно штатной браузерной отправки формы, вам нужно проверить параметр `transport` в обработчике:
+При импорте пакета без регистрации, требуется зарегистрировать его. При регистрации можно заменить наименования событий:
 
 ```javascript
-$(document).on('submitstart', '#my-form', function (e) {
-    if (e.transport === 'default') {
-        $(this).addClass('form-loading');
-    }
-});
-$(document).on('submitend', '#my-form', function (e) {
-    if (e.transport === 'default') {
-        $(this).removeClass('form-loading');
-    }
-});
+import ExtraEvents from 'form-extra-events/with-shims';
+
+ExtraEvents.register({
+    eventLast: 'last',
+})
 ```
 
-### Глобальные опции
+### Методы 
 
-Вы можете изменить настроки библиотеки, путём изменения объекта `window.FormExtraEvents` (в любое время, как до, так и после подключения скрипта).
+- `register([settings])` - регистрирует библиотеку
+    - `settings {Object} [{}]` - задать [параметры](#Параметры)
+    - `@return {Object}` - возвращает действующие настройки
+- `unregister()` - отменяет регистрацию библиотеки
+- `getSettings()` - возвращает действующие настройки
+    - `@return {Object}`
+- `getSendingForm()` - возвращает текущую отправляемую форму
+    - `@return {HTMLFormElement|null}` 
+- `setShim([setClosest[, setObjectAssign[, setCustomEvent]]])` - задаёт прокладки для некроссбраузерных методов
+    - `setClosest {Function|null}` - прокладка для `Element.prototype.closest`
+    - `setObjectAssign {Function|null}` - прокладка для `Object.assign`
+    - `setCustomEvent {Function|null}` - прокладка для `new CustomEvent`
 
-Пример:
+### Параметры
 
-```javascript
-window.FormExtraEvents = $.extend(true, window.FormExtraEvents || {}, {
-    catchDefault:  true,
-    timeout: 10000
-});
+- `eventLast {string} ['submitlast']` - наименование события `submitlast` 
+- `eventBefore {string} ['submitbefore']` - наименование события `submitbefore` 
+- `eventStart {string} ['submitstart']` - наименование события `submitstart` 
+- `eventEnd {string} ['submitend']` - наименование события `submitend` 
+
+## Тестирование
+
+Для тестов необходимо установить [selenium-драйверы](https://seleniumhq.github.io/selenium/docs/api/javascript/index.html) для браузеров.
+Для запуска тестов используйте:
+
+```sh
+npm test
 ```
-
-Опции:
-
-- `catchDefault` *(bool) по-умолчанию: false* - включить обнаружение перехода в состояние загрузки файлов по-умолчанию для всех форм
-- `dataAttribute` *(string) по-умолчанию: 'catchDownload'* - имя `data-` атрибута в camelCase
-- `param` *(string) по-умолчанию: '_requestId'* - имя пармаметра и cookie
-- `interval` *(integer) по-умолчанию: 100* - интервал проверки обнаружения перехода в состояние загрузки в миллисекундах
-- `timeout` *(integer) по-умолчанию: 60000* - время таймаута проверки обнаружение перехода в состояние загрузки в миллисекундах
-
-## Требования
-
-- jQuery 1.7+
 
 ## Поддержка браузерами
 
-Поддержка была протестирована в следующих браузерах:
-
-- Internet Explorer 7+
-- Chrome 7+
-- Firefox 3+
-- Opera 15+
-- Safari 5+
-- Android Browser 2.2+
-- iOS Safari ?
+- Internet Explorer 11+
+- Другие современные браузеры
